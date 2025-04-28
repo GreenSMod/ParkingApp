@@ -9,19 +9,56 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { supabase } from "../utils/supabase";
+import { useState, useEffect } from "react";
 
-function ProfileScreen(props) {
+function ProfileScreen({ session }) {
+  const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState("");
+
+  useEffect(() => {
+    if (session) getBalance();
+  }, [session]);
+
+  async function getBalance() {
+    const { data, error, status } = await supabase
+      .from("balances")
+      .select(`balance`)
+      .eq("id", session?.user.id)
+      .single();
+
+    setBalance(data.balance);
+  }
+
+  async function addMoney() {
+    const updates = {
+      id: session.user.id,
+      balance: balance + 100,
+    };
+
+    const { error } = await supabase.from("balances").upsert(updates);
+
+    getBalance();
+  }
+
   return (
     <View>
       <View style={styles.footer}>
         <Icon name="person-circle-sharp" size={42} color="white" />
-        <Text style={styles.emailLabel}>some_email@mail.com</Text>
+        <Text style={styles.emailLabel}>{session.user.email}</Text>
+        <View style={styles.signOutButton}>
+          <Button
+            title="Выйти"
+            color="darkblue"
+            onPress={() => supabase.auth.signOut()}
+          ></Button>
+        </View>
       </View>
       <ScrollView>
         <Text style={styles.vehiclesLabel}>Транспортные средства</Text>
         <ScrollView horizontal={true} style={styles.vehiclesScrollView}>
           <TouchableWithoutFeedback
-            onPressIn={() => Alert.alert("В разработке!")}
+            onPress={() => Alert.alert("В разработке!")}
           >
             <View style={styles.vehicleCard}>
               <Text style={styles.vehiclePlate}>А 001 АА 72</Text>
@@ -29,7 +66,7 @@ function ProfileScreen(props) {
             </View>
           </TouchableWithoutFeedback>
           <TouchableWithoutFeedback
-            onPressIn={() => Alert.alert("В разработке!")}
+            onPress={() => Alert.alert("В разработке!")}
           >
             <View style={styles.vehicleCard}>
               <Text style={styles.vehiclePlate}>Б 222 ББ 72</Text>
@@ -43,13 +80,11 @@ function ProfileScreen(props) {
             onPress={() => Alert.alert("В разработке!")}
           ></Button>
         </View>
-        <Text style={styles.moneyLabel}>Баланс: 0 руб</Text>
+        <Text style={styles.moneyLabel}>Баланс: {balance} руб</Text>
         <View style={styles.addMoneyButton}>
-          <Button
-            title="Пополнить баланс"
-            onPress={() => Alert.alert("В разработке!")}
-          ></Button>
+          <Button title="Пополнить баланс" onPress={addMoney}></Button>
         </View>
+
         <View style={styles.operationsHistory}>
           <Button
             title="История операций"
@@ -71,6 +106,12 @@ const styles = StyleSheet.create({
     backgroundColor: "dodgerblue",
   },
   emailLabel: { fontSize: 16, paddingTop: 10, paddingLeft: 20 },
+  signOutButton: {
+    flex: 1,
+    alignItems: "flex-end",
+    paddingTop: 5,
+    paddingRight: 20,
+  },
   vehiclesLabel: {
     fontSize: 20,
     color: "grey",

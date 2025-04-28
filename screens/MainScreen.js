@@ -1,17 +1,22 @@
 import React from "react";
+import HomeScreen from "./HomeScreen";
+import ProfileScreen from "./ProfileScreen";
+import Icon from "react-native-vector-icons/Ionicons";
+import MapScreen from "./MapScreen";
+import { Session } from "@supabase/supabase-js";
+import { useState, useEffect } from "react";
+import { supabase } from "../utils/supabase";
 import { NavigationContainer } from "@react-navigation/native";
 import {
   BottomTabBar,
   createBottomTabNavigator,
 } from "@react-navigation/bottom-tabs";
-import HomeScreen from "./HomeScreen";
-import ProfileScreen from "./ProfileScreen";
-import Icon from "react-native-vector-icons/Ionicons";
-import MapScreen from "./MapScreen";
 
 const Tab = createBottomTabNavigator();
 
-function MainScreen(props) {
+function MainScreen({ session }) {
+  if (!session?.user) throw new Error("No user on the session!");
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -34,9 +39,15 @@ function MainScreen(props) {
           tabBarShowLabel: false,
         })}
       >
-        <Tab.Screen name="Home" component={HomeScreen}></Tab.Screen>
-        <Tab.Screen name="Map" component={MapScreen}></Tab.Screen>
-        <Tab.Screen name="Profile" component={ProfileScreen}></Tab.Screen>
+        <Tab.Screen name="Home">
+          {(props) => <HomeScreen {...props} session={session} />}
+        </Tab.Screen>
+        <Tab.Screen name="Map">
+          {(props) => <MapScreen {...props} session={session} />}
+        </Tab.Screen>
+        <Tab.Screen name="Profile">
+          {(props) => <ProfileScreen {...props} session={session} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );
