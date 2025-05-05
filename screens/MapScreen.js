@@ -11,28 +11,51 @@ import {
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabase";
 import ParkingComponent from "./ParkingComponent";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 
 function MapScreen({ session }) {
   const [loading, setLoading] = useState(true);
   const [parkings, setParkings] = useState("");
 
   useEffect(() => {
-    if (session) getParkings();
+    getParkings();
   }, [session]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      getParkings();
+
+      return;
+    }, [])
+  );
+
   async function getParkings() {
+    setLoading(true);
+
     const { data, error, status } = await supabase.from("parkings").select();
-    setParkings(JSON.parse(JSON.stringify(data)));
+
+    let newData = JSON.stringify(data);
+
+    if (!(newData === JSON.stringify(parkings))) {
+      setParkings(JSON.parse(newData));
+    }
+
+    setLoading(false);
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView>
-        {parkings.map((data, index) => (
-          <ParkingComponent key={index} {...data} />
-        ))}
+        {loading ? (
+          <></>
+        ) : (
+          parkings.map((data, index) => (
+            <ParkingComponent key={index} {...data} />
+          ))
+        )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

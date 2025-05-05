@@ -6,46 +6,42 @@ import {
   TouchableWithoutFeedback,
   Alert,
 } from "react-native";
+import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 
-function ParkingComponent(props) {
+function VehicleComponent(props) {
   const navigation = useNavigation();
-
   return (
     <TouchableWithoutFeedback
       onPress={() =>
-        navigation.navigate("NewParkingSession", {
+        navigation.navigate("EditVehicle", {
+          isNew: false,
           props: props,
         })
       }
     >
-      <View style={styles.parkingCard}>
-        <Text style={styles.parkingName}>{"Зона №" + props.id}</Text>
-        <Text style={styles.parkingAdress}>{props.adress}</Text>
+      <View style={styles.vehicleCard}>
+        <Text style={styles.vehiclePlate}>{props.plate}</Text>
+        <Icon name="car" size={130} color="white" />
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  parkingCard: {
-    backgroundColor: "cornflowerblue",
-    flex: 1,
-    flexDirection: "column",
-    height: 80,
+  vehicleCard: {
+    backgroundColor: "dodgerblue",
+    width: 200,
+    height: 200,
     alignItems: "center",
     justifyContent: "center",
-    margin: 5,
+    margin: 10,
     borderRadius: 10,
   },
-  parkingName: {
-    fontSize: 14,
-    color: "lightgray",
-  },
-  parkingAdress: {
+  vehiclePlate: {
     fontSize: 20,
-    color: "azure",
+    color: "white",
   },
 });
 
-export default ParkingComponent;
+export default VehicleComponent;

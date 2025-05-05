@@ -14,7 +14,16 @@ function ParkingSessionComponent(props) {
         <Text style={styles.parkingName}>
           {"Парковочная сессия №" + props.id}
         </Text>
-        <Text style={styles.parkingAdress}>{props.end_date}</Text>
+        <Text style={styles.parkingAdress}>
+          {"Время окончания: " +
+            `${new Date(props.end_date).getHours()}:${new Date(
+              props.end_date
+            ).getMinutes()}, ${
+              new Date(props.end_date).getMonth() + 1
+            }.${new Date(props.end_date).getDate()}.${new Date(
+              props.end_date
+            ).getFullYear()}`}
+        </Text>
       </View>
     </TouchableWithoutFeedback>
   );

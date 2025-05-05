@@ -11,38 +11,92 @@ import {
 import Icon from "react-native-vector-icons/Ionicons";
 import { supabase } from "../utils/supabase";
 import { useState, useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import VehicleComponent from "./VehicleComponent";
 
 function ProfileScreen({ session }) {
+  const navigation = useNavigation();
+
   const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState("");
   const [balance, setBalance] = useState("");
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
-    if (session) getBalance();
+    getVehicles();
+    getBalance();
+    // const unsubscribe = navigation.addListener("focus", () => {
+    //   getVehicles();
+    //   getBalance();
+    // });
+
+    // return unsubscribe;
   }, [session]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      getVehicles();
+      getBalance();
+
+      return;
+    }, [])
+  );
+
+  async function getVehicles() {
+    setLoading(true);
+
+    const { data, error, status } = await supabase
+      .from("vehicles")
+      .select()
+      .eq("owner_id", session?.user.id);
+
+    let newData = JSON.stringify(data);
+
+    if (!(newData === JSON.stringify(vehicles))) {
+      setVehicles(JSON.parse(newData));
+    }
+
+    setLoading(false);
+  }
+
   async function getBalance() {
+    setLoading(true);
+
     const { data, error, status } = await supabase
       .from("balances")
       .select(`balance`)
       .eq("id", session?.user.id)
       .single();
 
-    setBalance(data.balance);
+    if (!(data.balance === balance)) {
+      setBalance(data.balance);
+    }
+
+    setLoading(false);
   }
 
   async function addMoney() {
+    setDisabled(true);
+    setTimeout(() => setDisabled(false), 3000);
+
+    //getBalance();
+
+    let newBalance = balance + 100;
+
+    setBalance(newBalance);
+
     const updates = {
       id: session.user.id,
-      balance: balance + 100,
+      balance: newBalance,
     };
 
     const { error } = await supabase.from("balances").upsert(updates);
-
-    getBalance();
   }
 
   return (
-    <View>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.footer}>
         <Icon name="person-circle-sharp" size={42} color="white" />
         <Text style={styles.emailLabel}>{session.user.email}</Text>
@@ -54,37 +108,37 @@ function ProfileScreen({ session }) {
           ></Button>
         </View>
       </View>
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Text style={styles.vehiclesLabel}>Транспортные средства</Text>
         <ScrollView horizontal={true} style={styles.vehiclesScrollView}>
-          <TouchableWithoutFeedback
-            onPress={() => Alert.alert("В разработке!")}
-          >
-            <View style={styles.vehicleCard}>
-              <Text style={styles.vehiclePlate}>А 001 АА 72</Text>
-              <Icon name="car" size={130} color="white" />
-            </View>
-          </TouchableWithoutFeedback>
-          <TouchableWithoutFeedback
-            onPress={() => Alert.alert("В разработке!")}
-          >
-            <View style={styles.vehicleCard}>
-              <Text style={styles.vehiclePlate}>Б 222 ББ 72</Text>
-              <Icon name="car" size={130} color="white" />
-            </View>
-          </TouchableWithoutFeedback>
+          {loading ? (
+            <></>
+          ) : vehicles.length > 0 ? (
+            vehicles.map((data, index) => (
+              <VehicleComponent key={index} {...data} />
+            ))
+          ) : (
+            <Text style={{ fontSize: 15, margin: 20 }}>ТС не добавлены</Text>
+          )}
         </ScrollView>
         <View style={styles.addVehicleButton}>
           <Button
             title="Добавить ТС"
-            onPress={() => Alert.alert("В разработке!")}
+            onPress={() =>
+              navigation.navigate("EditVehicle", {
+                isNew: true,
+              })
+            }
           ></Button>
         </View>
         <Text style={styles.moneyLabel}>Баланс: {balance} руб</Text>
         <View style={styles.addMoneyButton}>
-          <Button title="Пополнить баланс" onPress={addMoney}></Button>
+          <Button
+            title="Пополнить баланс"
+            onPress={addMoney}
+            disabled={disabled}
+          ></Button>
         </View>
-
         <View style={styles.operationsHistory}>
           <Button
             title="История операций"
@@ -92,7 +146,7 @@ function ProfileScreen({ session }) {
           ></Button>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -119,23 +173,16 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
   },
   vehiclesScrollView: {},
-  vehicleCard: {
-    backgroundColor: "dodgerblue",
-    width: 200,
-    height: 200,
-    alignItems: "center",
-    justifyContent: "center",
-    margin: 10,
-    borderRadius: 10,
+
+  addVehicleButton: { width: 200, marginTop: 20, marginLeft: 20 },
+  moneyLabel: { fontSize: 20, color: "grey", marginTop: 70, marginLeft: 20 },
+  addMoneyButton: { width: 250, marginTop: 20, marginLeft: 20 },
+  operationsHistory: {
+    width: 250,
+    marginTop: 100,
+    marginBottom: 40,
+    marginLeft: 20,
   },
-  vehiclePlate: {
-    fontSize: 20,
-    color: "white",
-  },
-  addVehicleButton: { width: 200, paddingTop: 20, paddingLeft: 20 },
-  moneyLabel: { fontSize: 20, color: "grey", paddingTop: 70, paddingLeft: 20 },
-  addMoneyButton: { width: 250, paddingTop: 20, paddingLeft: 20 },
-  operationsHistory: { width: 250, paddingTop: 100, paddingLeft: 20 },
 });
 
 export default ProfileScreen;
